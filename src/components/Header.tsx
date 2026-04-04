@@ -7,45 +7,23 @@ type HeaderProps = {
 
 export const Header: React.FC<HeaderProps> = ({ title }) => {
   return (
-    <header className="app-header">
-      <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{title}</h2>
+    <header className="h-[70px] shrink-0 flex items-center justify-between px-8 border-b border-green-500/15 bg-white/60 backdrop-blur-md z-10">
+      <h2 className="text-xl font-bold tracking-tight text-slate-800">{title}</h2>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <div style={{ 
-          position: 'relative', 
-          display: 'flex', 
-          alignItems: 'center',
-          background: 'rgba(255,255,255,0.8)',
-          borderRadius: 'var(--radius-full)',
-          padding: '0.4rem 1rem',
-          border: '1px solid var(--border-color)'
-        }}>
-          <Search size={16} className="text-muted" style={{ marginRight: '0.5rem' }} />
+      <div className="flex items-center gap-4">
+        <div className="relative flex items-center bg-white/80 rounded-full px-4 py-1.5 border border-green-500/15 focus-within:ring-2 focus-within:ring-primary/20 transition-all group">
+          <Search size={16} className="text-slate-400 mr-2 group-focus-within:text-primary transition-colors" />
           <input 
             type="text" 
-            placeholder="児童を検索..." 
-            style={{ 
-              border: 'none', 
-              background: 'transparent', 
-              outline: 'none', 
-              width: '200px',
-              fontSize: '0.875rem'
-            }} 
+            placeholder="こどもを検索..." 
+            className="border-none bg-transparent outline-none w-48 text-sm text-slate-700 placeholder-slate-400"
           />
         </div>
 
-        <button className="btn-icon">
+        <button className="relative w-10 h-10 flex items-center justify-center rounded-full text-slate-500 hover:bg-black/5 hover:text-slate-800 transition-all">
           <Bell size={20} />
           {/* 通知バッジ */}
-          <span style={{ 
-            position: 'absolute', 
-            top: 6, 
-            right: 8, 
-            width: 8, 
-            height: 8, 
-            backgroundColor: '#EF4444', 
-            borderRadius: '50%' 
-          }}></span>
+          <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
         </button>
       </div>
     </header>

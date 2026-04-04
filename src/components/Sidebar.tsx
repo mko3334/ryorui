@@ -1,76 +1,139 @@
 import React from 'react';
-import { Users, FileText, Settings } from 'lucide-react';
-// import './Sidebar.css' などが必要な場合は追加しますが、今回は index.css にグローバル定義します。
+import { Users, FileText, Settings, ClipboardList, FileCheck, ChevronRight } from 'lucide-react';
+import type { Child } from '../data/mockData';
 
 type SidebarProps = {
   currentPath: string;
   onNavigate: (path: string) => void;
+  viewMode: 'by-child' | 'by-document';
+  onViewModeChange: (mode: 'by-child' | 'by-document') => void;
+  childrenData: Child[];
+  selectedChildId: string | null;
+  onSelectChild: (id: string) => void;
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => {
-  const navItems = [
-    { id: 'children', label: '顧客（児童）一覧', icon: <Users size={20} /> },
-    { id: 'child-form', label: '顧客新規登録', icon: <FileText size={20} /> },
-    { id: 'settings', label: '設定', icon: <Settings size={20} /> },
+export const Sidebar: React.FC<SidebarProps> = ({ 
+  currentPath, 
+  onNavigate, 
+  viewMode, 
+  onViewModeChange,
+  childrenData,
+  selectedChildId,
+  onSelectChild
+}) => {
+  const byChildItems = [
+    { id: 'child-form', label: '新規登録', icon: <FileText size={20} /> },
   ];
 
+  const byDocumentItems = [
+    { id: 'children', label: 'プライベートシート', icon: <Users size={20} /> },
+    { id: 'support-plan', label: '専門制支援計画', icon: <ClipboardList size={20} /> },
+    { id: 'support-implementation', label: '専門的支援実施計画', icon: <ClipboardList size={20} /> },
+    { id: 'assessment', label: 'アセスメントシート', icon: <FileCheck size={20} /> },
+    { id: 'force-sheet', label: '強行シート', icon: <ClipboardList size={20} /> },
+  ];
+
+  const navItems = viewMode === 'by-child' ? byChildItems : byDocumentItems;
+
   return (
-    <aside className="app-sidebar">
-      <div className="sidebar-brand" style={{ marginBottom: '2rem', padding: '0 0.5rem' }}>
-        <h1 style={{ fontSize: '1.25rem', color: 'var(--primary)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.4rem', letterSpacing: '-0.5px' }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <aside className="app-sidebar fixed left-0 top-0 bottom-0 w-sidebar-collapsed hover:w-sidebar-expanded flex flex-col p-6 pr-3 border-r border-green-500/15 bg-white/85 backdrop-blur-2xl z-[100] transition-all duration-normal overflow-hidden hover:shadow-2xl hover:px-6">
+      <div className="mb-6 px-2">
+        <h1 className="text-xl text-primary font-bold flex items-center gap-2 tracking-tight">
+          <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center flex-shrink-0">
             <Users size={18} />
           </div>
-          <span>Tree Ki<span style={{color: 'var(--secondary)'}}>d</span>s</span>
+          <span className="sidebar-text">Tree Ki<span className="text-secondary">d</span>s</span>
         </h1>
       </div>
 
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+      {/* 視点切り替えトグル */}
+      <div className="mb-6 p-1 bg-black/5 rounded-xl">
+        <div className="flex gap-1">
+          <button 
+            className={`flex-1 py-2 text-[13px] font-semibold rounded-lg text-center transition-all duration-150 ${viewMode === 'by-child' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            onClick={() => onViewModeChange('by-child')}
+          >
+            <span className="sidebar-text">児童別</span>
+          </button>
+          <button 
+            className={`flex-1 py-2 text-[13px] font-semibold rounded-lg text-center transition-all duration-150 ${viewMode === 'by-document' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            onClick={() => onViewModeChange('by-document')}
+          >
+            <span className="sidebar-text">書類別</span>
+          </button>
+        </div>
+      </div>
+
+      <nav className="flex flex-col gap-2 flex-1 overflow-y-auto pr-2">
+        <div className="sidebar-text text-[11px] font-bold text-slate-400 mb-2 pl-4 uppercase tracking-wider">
+          {viewMode === 'by-child' ? '児童から探す' : '書類から探す'}
+        </div>
+        
+        {/* メインメニュー項目 */}
         {navItems.map((item) => {
           const isActive = currentPath === item.id;
           return (
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem 1rem',
-                borderRadius: '8px',
-                color: isActive ? 'var(--primary)' : 'var(--text-muted)',
-                backgroundColor: isActive ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                fontWeight: isActive ? 600 : 500,
-                transition: 'all var(--transition-fast)',
-                textAlign: 'left',
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.03)';
-                  e.currentTarget.style.color = 'var(--text-main)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-muted)';
-                }
-              }}
+              className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-150 w-full text-left cursor-pointer group-hover:justify-start justify-center ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-black/5 font-medium'}`}
             >
-              {item.icon}
-              {item.label}
+              <div className="flex-shrink-0 flex items-center justify-center">
+                {item.icon}
+              </div>
+              <span className="sidebar-text text-[15px]">{item.label}</span>
             </button>
           );
         })}
+
+        {/* 児童別モードの時の特定の児童リスト */}
+        {viewMode === 'by-child' && (
+          <div className="mt-4 flex flex-col gap-1">
+            <div className="sidebar-text text-[11px] font-bold text-slate-400 mb-2 pl-4 uppercase tracking-wider">
+              児童一覧
+            </div>
+            {childrenData.map(child => {
+              const isSelected = selectedChildId === child.id;
+              return (
+                <button
+                  key={child.id}
+                  onClick={() => onSelectChild(child.id)}
+                  className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-150 w-full text-left cursor-pointer group-hover:justify-start justify-center ${isSelected ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-black/5'}`}
+                >
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0 ${isSelected ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500'}`}>
+                    {child.imageKey}
+                  </div>
+                  <span className="sidebar-text flex-1 text-sm">{child.fullName}</span>
+                  <div className="sidebar-text flex-shrink-0">
+                    {isSelected && <ChevronRight size={14} />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* 共通メニュー */}
+        <div className="mt-auto pt-6 border-t border-green-500/15">
+          <button
+            onClick={() => onNavigate('settings')}
+            className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-150 w-full text-left cursor-pointer group-hover:justify-start justify-center ${currentPath === 'settings' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-black/5 font-medium'}`}
+          >
+            <div className="flex-shrink-0 flex items-center justify-center">
+              <Settings size={20} />
+            </div>
+            <span className="sidebar-text text-[15px]">設定</span>
+          </button>
+        </div>
       </nav>
 
-      <div className="sidebar-user" style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>ST</span>
+      <div className="mt-auto pt-4 border-t border-green-500/15 flex items-center gap-3 overflow-hidden">
+        <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
+          <span className="text-[12px] font-bold text-slate-600">ST</span>
         </div>
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>スタッフ 太郎</p>
-          <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>管理者</p>
+        <div className="sidebar-text overflow-hidden">
+          <p className="m-0 text-sm font-semibold truncate text-slate-800">スタッフ 太郎</p>
+          <p className="m-0 text-[11px] text-slate-500">管理者</p>
         </div>
       </div>
     </aside>
