@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "test-octopus-5b254"
+  },
+  "targets": {
+    "test-octopus-5b254": {
+      "hosting": {
+        "test-syorui": [
+          "test-syorui"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

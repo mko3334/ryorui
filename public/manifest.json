@@ -1,0 +1,16 @@
+{
+  "name": "Tree Kids",
+  "short_name": "TreeKids",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2da44e",
+  "description": "Tree Kids 顧客管理システム",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

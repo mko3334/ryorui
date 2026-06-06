@@ -1,0 +1,467 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2BAE49;
+  --color-primary-hover: #228f3a;
+  --color-secondary: #E32128;
+  --color-tree-brown: #79553D;
+  --color-bg-color: #F8FAF9;
+  --color-text-main: #2C3E30;
+  --color-text-muted: #6B7A6F;
+  
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  
+  --spacing-sidebar-collapsed: 70px;
+  --spacing-sidebar-expanded: 260px;
+  
+  --transition-duration-normal: 0.3s;
+  --transition-timing-function-normal: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html, body {
+  overscroll-behavior-x: none;
+  overflow-x: hidden;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --border-color: rgba(43, 174, 73, 0.15);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.6);
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-gray-50 text-slate-800 antialiased;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(134,60%,90%,0.4) 0, transparent 50%), 
+      radial-gradient(at 50% 0%, hsla(24,33%,80%,0.3) 0, transparent 50%), 
+      radial-gradient(at 100% 0%, hsla(358,76%,90%,0.3) 0, transparent 50%);
+    /* iOS Safari では fixed だとスクロール中に再描画が追いつかずぶつ切りになるため
+       デスクトップのみ fixed を使用し、モバイルは scroll に切り替える */
+    background-attachment: fixed;
+  }
+}
+
+/* モバイル端末での background-attachment:fixed 描画バグを回避 */
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-white/85 backdrop-blur-xl border border-white/60 rounded-lg shadow-sm transition-all duration-300;
+  }
+  
+  .glass-panel:hover {
+    @apply shadow-md -translate-y-0.5;
+  }
+
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-md font-medium transition-all duration-200 inline-flex items-center gap-2 shadow-[0_4px_10px_rgba(43,174,73,0.2)] active:scale-95 hover:-translate-y-0.5;
+  }
+
+  .btn-secondary {
+    @apply bg-white hover:bg-slate-50 text-slate-700 px-5 py-2.5 rounded-md font-medium border border-slate-200 transition-all duration-200 inline-flex items-center gap-2 active:scale-95;
+  }
+
+  /* サイドバーのテキスト表示 */
+  .sidebar-text {
+    @apply opacity-100 visible whitespace-nowrap transition-all duration-200;
+  }
+
+  /* 右側に展開するサブメニュー */
+  .doc-submenu {
+    @apply absolute left-full top-0 ml-1 bg-white/95 backdrop-blur-xl border border-green-500/10 rounded-2xl shadow-2xl p-3 min-w-[200px] transition-all duration-300 opacity-0 invisible -translate-x-4 pointer-events-none z-[110];
+  }
+
+  .child-item-active .doc-submenu {
+    @apply opacity-100 visible translate-x-0 pointer-events-auto;
+  }
+}
+
+/* カスタムアニメーション */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.95); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* GPU描画を強制し、iOS等でのスクロール時の描画遅延を防ぐ。
+   ※スクロールコンテナやテーブルラッパーには適用しないこと。
+     will-change:transform が新しい合成レイヤーを生成し、
+     position:sticky の基準がズレるバグを引き起こすため。 */
+.gpu-accelerated {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+
+/* ===================================================
+   印刷用ページサイズ定義（名前付きページ）
+   =================================================== */
+
+/* 両計画書ともに A4横 */
+@page landscape-page {
+  size: A4 landscape;
+  margin: 0;
+}
+
+/* 専門的支援実施計画は A4縦 */
+@page portrait-page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+/* ===================================================
+   @media print — 共通基盤
+   =================================================== */
+@media print {
+
+  /* ボディ・レイアウトリセット */
+  body {
+    background: white !important;
+    background-image: none !important;
+    font-family: 'Noto Sans JP', sans-serif !important;
+    color: #000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .flex.h-screen,
+  main {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  .flex-1.overflow-y-auto {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  /* アニメーション無効化 */
+  .animate-fade-in {
+    animation: none !important;
+  }
+
+  /* print:hidden — グローバル */
+  .print\:hidden {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* print:flex (フッター等) */
+  .print\:flex {
+    display: flex !important;
+  }
+
+  /* overflow 解除 */
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  /* テーブル共通 */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  td, th {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    padding: 2px 4px !important;
+    line-height: 1.4 !important;
+    vertical-align: top;
+  }
+
+  /* 背景色保持 */
+  .bg-slate-100,
+  .bg-slate-50 {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background-color: #e2e8f0 !important;
+  }
+
+  /* input / textarea */
+  input,
+  textarea {
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    resize: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-family: inherit !important;
+    color: #000 !important;
+    overflow: hidden !important;
+    width: 100% !important;
+    display: block !important;
+  }
+
+  input[type="checkbox"] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    width: 9px !important;
+    height: 9px !important;
+    display: inline-block !important;
+    overflow: visible !important;
+  }
+
+  .border-b {
+    border-bottom: 0.5pt solid #6b7280 !important;
+  }
+
+  tr, td, th {
+    page-break-inside: avoid;
+  }
+
+  /* ===================================================
+     専門的支援計画書（横）: body.print-prof
+     =================================================== */
+  body.print-prof * {
+    visibility: hidden !important;
+  }
+
+  body.print-prof #prof-plan-print,
+  body.print-prof #prof-plan-print * {
+    visibility: visible !important;
+  }
+
+  body.print-prof #prof-plan-print {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+    padding: 10mm !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    display: block !important;
+    zoom: 0.72;
+    page: landscape-page;
+  }
+
+  /* ===================================================
+     専門的支援計画書 一括印刷（横）: body.print-prof-all
+     =================================================== */
+  body.print-prof-all * {
+    visibility: hidden !important;
+  }
+
+  body.print-prof-all #prof-plan-print-all,
+  body.print-prof-all #prof-plan-print-all * {
+    visibility: visible !important;
+  }
+
+  body.print-prof-all #prof-plan-print-all {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+    padding: 10mm !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+    zoom: 0.72;
+    page: landscape-page;
+  }
+
+  .print-pagebreak-after {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  body.print-prof #prof-plan-print > div:last-child {
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  body.print-prof td,
+  body.print-prof th {
+    font-size: 9pt !important;
+  }
+
+  body.print-prof input,
+  body.print-prof textarea {
+    font-size: 9pt !important;
+  }
+
+  body.print-prof label {
+    font-size: 7pt !important;
+    line-height: 1.25 !important;
+  }
+
+  /* ===================================================
+     専門的支援実施計画（横）: body.print-impl
+     =================================================== */
+  body.print-impl * {
+    visibility: hidden !important;
+  }
+
+  body.print-impl #support-impl-print,
+  body.print-impl #support-impl-print * {
+    visibility: visible !important;
+  }
+
+  /* print:hidden は確実に非表示（最高詳細度でtable-cell上書きを防ぐ） */
+  body.print-impl .print\:hidden,
+  body.print-impl td.print\:hidden,
+  body.print-impl th.print\:hidden,
+  body.print-impl div.print\:hidden,
+  body.print-impl button.print\:hidden,
+  body.print-impl input.print\:hidden,
+  body.print-impl textarea.print\:hidden {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  body.print-impl #support-impl-print {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+    padding: 6mm !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    display: block !important;
+    zoom: 0.82;
+    page: portrait-page;
+  }
+
+  body.print-impl #support-impl-print .glass-panel {
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+    backdrop-filter: none !important;
+  }
+
+  body.print-impl table {
+    display: table !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+
+  body.print-impl thead {
+    display: table-header-group !important;
+  }
+
+  body.print-impl tbody {
+    display: table-row-group !important;
+  }
+
+  body.print-impl tr {
+    display: table-row !important;
+  }
+
+  /* div ベースのテーブル要素を正しく認識させる */
+  body.print-impl div.print\:table {
+    display: table !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+
+  body.print-impl div.print\:table-header-group {
+    display: table-header-group !important;
+  }
+
+  body.print-impl div.print\:table-row-group {
+    display: table-row-group !important;
+  }
+
+  body.print-impl div.print\:table-row {
+    display: table-row !important;
+  }
+
+  body.print-impl div.print\:table-cell {
+    display: table-cell !important;
+    font-size: 7.5pt !important;
+    padding: 3px 4px !important;
+    border: 0.5pt solid #6b7280 !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    overflow: hidden !important;
+    vertical-align: top !important;
+    height: auto !important;
+    max-height: none !important;
+    line-height: 1.4 !important;
+  }
+
+  body.print-impl td,
+  body.print-impl th {
+    display: table-cell !important;
+    font-size: 7.5pt !important;
+    padding: 3px 4px !important;
+    border: 0.5pt solid #6b7280 !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    overflow: hidden !important;
+    vertical-align: top !important;
+    height: auto !important;
+    max-height: none !important;
+    line-height: 1.4 !important;
+  }
+
+  /* print:hidden の td/th は確実に非表示（table-cell より詳細度を高く） */
+  body.print-impl td.print\:hidden,
+  body.print-impl th.print\:hidden {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  body.print-impl input,
+  body.print-impl textarea {
+    font-size: 8pt !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  body.print-impl input.print\:hidden,
+  body.print-impl textarea.print\:hidden {
+    display: none !important;
+  }
+}
