@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronLeft, ChevronRight, Plus, Trash2, Save, Printer, Download, CheckCircle2, UploadCloud, Archive } from 'lucide-react';
 import {
-  doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs, writeBatch
+  doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, writeBatch
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { Child } from '../data/mockData';
@@ -279,7 +279,9 @@ export const ProfessionalPerspective: React.FC<Props> = ({ childrenData, selecte
         setCurrentMonth(best);
         setSelectedYear(parseInt(best.slice(0, 4), 10));
       } else {
-        setCurrentMonth('');
+        const fallback = new Date().toISOString().slice(0, 7);
+        setCurrentMonth(fallback);
+        setSelectedYear(parseInt(fallback.slice(0, 4), 10));
       }
     } catch (e) {
       console.error('fetchAvailableMonths error:', e);
@@ -378,7 +380,9 @@ export const ProfessionalPerspective: React.FC<Props> = ({ childrenData, selecte
   // showArchived の変更、または availableMonths の取得後に currentMonth を適切に切り替える
   useEffect(() => {
     if (availableMonths.length === 0) {
-      setCurrentMonth('');
+      const current = new Date().toISOString().slice(0, 7);
+      setCurrentMonth(current);
+      setSelectedYear(parseInt(current.slice(0, 4), 10));
       return;
     }
 
@@ -397,7 +401,9 @@ export const ProfessionalPerspective: React.FC<Props> = ({ childrenData, selecte
         setCurrentMonth(best);
         setSelectedYear(parseInt(best.slice(0, 4), 10));
       } else {
-        setCurrentMonth('');
+        const fallback = new Date().toISOString().slice(0, 7);
+        setCurrentMonth(fallback);
+        setSelectedYear(parseInt(fallback.slice(0, 4), 10));
       }
     }
   }, [showArchived, availableMonths, periodArchiveMap]);
@@ -492,6 +498,56 @@ export const ProfessionalPerspective: React.FC<Props> = ({ childrenData, selecte
       onReload?.();
     } catch (e) {
       alert('保存に失敗しました。');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ---- 専門的支援実施計画へ反映 ----
+  const handleReflectToImplementation = async () => {
+    if (!childId || !currentMonth || !plan || activeTab !== 'final') return;
+    
+    // 開始年月日（createdAt）が必須
+    if (!plan.createdAt) {
+      alert('開始年月日を入力してください。');
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      const startMonth = plan.createdAt.slice(0, 7); // YYYY-MM
+      
+      // 5ヶ月後を終了月とする（計6ヶ月間）
+      const date = new Date(`${startMonth}-01T00:00:00`);
+      date.setMonth(date.getMonth() + 5);
+      const endMonth = date.toISOString().slice(0, 7);
+      
+      const updatedPlan: ProfessionalPlanDoc = {
+        ...plan,
+        isReflected: true,
+        reflectedStartMonth: startMonth,
+        reflectedEndMonth: endMonth,
+      };
+      
+      // プランドキュメントを更新
+      const docId = `${childId}_${plan.startMonth || currentMonth}_final_${selectedOfficeId}`;
+      await setDoc(doc(db, PLAN_COL, docId), {
+        ...updatedPlan,
+        officeId: selectedOfficeId,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      
+      // 児童のドキュメントに更新期限を記録
+      const childrenRef = collection(db, 'children');
+      await updateDoc(doc(childrenRef, childId), {
+        currentPlanEndMonth: endMonth,
+      });
+      
+      setPlan(updatedPlan);
+      alert(`${startMonth} ～ ${endMonth} の期間で専門的支援実施計画に反映しました。`);
+    } catch (e) {
+      console.error(e);
+      alert('反映に失敗しました。');
     } finally {
       setIsSaving(false);
     }
@@ -830,6 +886,18 @@ export const ProfessionalPerspective: React.FC<Props> = ({ childrenData, selecte
       onClick: handleToggleArchive,
       colorClass: isCurrentPeriodArchived ? 'bg-amber-600 text-white' : 'bg-slate-600 text-white'
     },
+    { 
+      label: showArchived ? 'アーカイブ表示中' : 'アーカイブを見る', 
+      icon: <Archive size={16} />, 
+      onClick: () => setShowArchived(prev => !prev),
+      colorClass: showArchived ? 'bg-amber-600 text-white' : ''
+    },
+    { 
+      label: '【テスト用】全データ削除', 
+      icon: <Trash2 size={16} />, 
+      onClick: handleTestDeleteAllPlans,
+      colorClass: 'text-red-600'
+    },
     ...(activeTab !== 'hours' ? [
       { 
         label: '設定から反映', 
@@ -923,26 +991,20 @@ export const ProfessionalPerspective: React.FC<Props> = ({ childrenData, selecte
         </div>
         {/* PC表示用：アクションバー（モバイルでは非表示） */}
         <div className="hidden md:flex gap-3">
-          <button className="btn-secondary flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200" onClick={handlePrintAll}>
-            <Printer size={16} /> まとめて印刷
-          </button>
-          <button className="btn-secondary flex items-center gap-2" onClick={handlePrint}>
-            <Printer size={16} /> 印刷
-          </button>
-          {activeTab !== 'hours' && (
-            <button className="btn-secondary flex items-center gap-2" onClick={handleExcelExport}>
-              <Download size={16} /> Excel出力
+          {activeTab === 'final' && plan?.isReflected && (
+            <div className="flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-3 rounded-lg border border-emerald-200 h-9">
+              反映済み ({plan.reflectedStartMonth} 〜 {plan.reflectedEndMonth})
+            </div>
+          )}
+          {activeTab === 'final' && (
+            <button
+              className="btn-secondary flex items-center gap-2 border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+              onClick={handleReflectToImplementation}
+              disabled={isSaving}
+            >
+              <CheckCircle2 size={16} /> 実施計画に反映
             </button>
           )}
-          <button className="btn-secondary flex items-center gap-2" onClick={() => setIsImportOpen(true)}>
-            <UploadCloud size={16} /> Excelインポート
-          </button>
-          <button 
-            className={`btn-secondary flex items-center gap-2 ${isCurrentPeriodArchived ? 'text-amber-600 border-amber-200 bg-amber-50/30 hover:bg-amber-100/30' : ''}`} 
-            onClick={handleToggleArchive}
-          >
-            <Archive size={16} /> {isCurrentPeriodArchived ? 'アーカイブ解除' : 'アーカイブ'}
-          </button>
           <button
             className="btn-primary flex items-center gap-2"
             onClick={handleSave}
@@ -977,32 +1039,6 @@ export const ProfessionalPerspective: React.FC<Props> = ({ childrenData, selecte
             </button>
           </div>
 
-          {/* アーカイブを見るトグル */}
-          <div className="flex items-center gap-2 border-r border-slate-200 pr-4">
-            <button
-              onClick={() => setShowArchived(prev => !prev)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                showArchived
-                  ? 'bg-amber-600 text-white shadow-sm hover:bg-amber-700'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <Archive size={13} />
-              <span>{showArchived ? 'アーカイブ表示中' : 'アーカイブを見る'}</span>
-            </button>
-          </div>
-
-          {/* テスト用全削除ボタン */}
-          <div className="flex items-center gap-2 border-r border-slate-200 pr-4">
-            <button
-              onClick={handleTestDeleteAllPlans}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold border border-red-200 hover:border-red-500 bg-red-50 hover:bg-red-100 text-red-600 transition-all flex items-center gap-1.5"
-              title="【テスト用警告】この児童の全支援計画データを削除します"
-            >
-              <Trash2 size={13} />
-              <span>【テスト用】全データ削除</span>
-            </button>
-          </div>
 
           {/* 6ヶ月更新のサイクル月ボタン */}
           <div className="flex items-center gap-2 flex-wrap">
@@ -1048,7 +1084,7 @@ export const ProfessionalPerspective: React.FC<Props> = ({ childrenData, selecte
         <div className="flex bg-slate-200/60 p-1 rounded-xl">
           <button
             onClick={() => setActiveTab('final')}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
               activeTab === 'final'
                 ? 'bg-white text-slate-800 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800'
@@ -1058,7 +1094,7 @@ export const ProfessionalPerspective: React.FC<Props> = ({ childrenData, selecte
           </button>
           <button
             onClick={() => setActiveTab('draft')}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
               activeTab === 'draft'
                 ? 'bg-white text-slate-800 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800'
@@ -1068,7 +1104,7 @@ export const ProfessionalPerspective: React.FC<Props> = ({ childrenData, selecte
           </button>
           <button
             onClick={() => setActiveTab('hours')}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
               activeTab === 'hours'
                 ? 'bg-white text-slate-800 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800'
@@ -1108,7 +1144,7 @@ export const ProfessionalPerspective: React.FC<Props> = ({ childrenData, selecte
             </div>
             {/* 右：作成年月日 */}
             <div className="text-sm flex items-baseline gap-1 whitespace-nowrap">
-              <span>作成年月日：</span>
+              <span>{activeTab === 'final' ? '開始年月日：' : '作成年月日：'}</span>
               <input
                 type="number"
                 className="outline-none bg-transparent w-12 border-b border-slate-400 text-center"
@@ -1437,35 +1473,37 @@ export const ProfessionalPerspective: React.FC<Props> = ({ childrenData, selecte
                   placeholder="氏名を入力"
                 />
                 <span className="text-sm ml-2">印</span>
-                <div className="flex items-baseline gap-1 text-[12px] ml-4">
-                  <input
-                    type="number"
-                    className="outline-none bg-transparent w-12 border-b border-slate-400 text-center"
-                    style={{ touchAction: 'pan-y' }}
-                    value={sy || ''}
-                    onChange={(e) => update('signDate', `${e.target.value}-${sm || ''}-${sd || ''}`)}
-                    placeholder="年"
-                  />
-                  <span>年</span>
-                  <input
-                    type="number"
-                    className="outline-none bg-transparent w-8 border-b border-slate-400 text-center"
-                    style={{ touchAction: 'pan-y' }}
-                    value={sm || ''}
-                    onChange={(e) => update('signDate', `${sy || ''}-${e.target.value}-${sd || ''}`)}
-                    placeholder="月"
-                  />
-                  <span>月</span>
-                  <input
-                    type="number"
-                    className="outline-none bg-transparent w-8 border-b border-slate-400 text-center"
-                    style={{ touchAction: 'pan-y' }}
-                    value={sd || ''}
-                    onChange={(e) => update('signDate', `${sy || ''}-${sm || ''}-${e.target.value}`)}
-                    placeholder="日"
-                  />
-                  <span>日</span>
-                </div>
+                {activeTab !== 'draft' && (
+                  <div className="flex items-baseline gap-1 text-[12px] ml-4">
+                    <input
+                      type="number"
+                      className="outline-none bg-transparent w-12 border-b border-slate-400 text-center"
+                      style={{ touchAction: 'pan-y' }}
+                      value={sy || ''}
+                      onChange={(e) => update('signDate', `${e.target.value}-${sm || ''}-${sd || ''}`)}
+                      placeholder="年"
+                    />
+                    <span>年</span>
+                    <input
+                      type="number"
+                      className="outline-none bg-transparent w-8 border-b border-slate-400 text-center"
+                      style={{ touchAction: 'pan-y' }}
+                      value={sm || ''}
+                      onChange={(e) => update('signDate', `${sy || ''}-${e.target.value}-${sd || ''}`)}
+                      placeholder="月"
+                    />
+                    <span>月</span>
+                    <input
+                      type="number"
+                      className="outline-none bg-transparent w-8 border-b border-slate-400 text-center"
+                      style={{ touchAction: 'pan-y' }}
+                      value={sd || ''}
+                      onChange={(e) => update('signDate', `${sy || ''}-${sm || ''}-${e.target.value}`)}
+                      placeholder="日"
+                    />
+                    <span>日</span>
+                  </div>
+                )}
               </div>
             </div>
 

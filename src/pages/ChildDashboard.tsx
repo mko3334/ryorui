@@ -15,6 +15,7 @@ type DocCard = {
   path: string;
   available: boolean;
   color: string;
+  alertMessage?: string;
 };
 
 export const ChildDashboard: React.FC<ChildDashboardProps> = ({ childrenData }) => {
@@ -32,6 +33,9 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ childrenData }) 
     );
   }
 
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const isExpiring = selectedChild.currentPlanEndMonth === currentMonth;
+
   const docCards: DocCard[] = [
     {
       id: 'professional-perspective',
@@ -41,15 +45,17 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ childrenData }) 
       path: `/children/${childId}/professional-perspective`,
       available: true,
       color: 'from-violet-500 to-purple-600',
+      alertMessage: isExpiring ? '更新期日が1か月を切りました' : undefined,
     },
     {
       id: 'support-plan',
       title: '専門的支援実施計画',
       description: '月次の支援目標・実施内容・結果・今後の計画を記録します。ツリー通信との連携機能あり。',
       icon: <FileText size={28} />,
-      path: `/children/${childId}/support-plan/${new Date().toISOString().slice(0, 7)}`,
+      path: `/children/${childId}/support-plan/${currentMonth}`,
       available: true,
       color: 'from-emerald-500 to-teal-600',
+      alertMessage: isExpiring ? '更新期日が1か月を切りました' : undefined,
     },
     {
       id: 'force-sheet',
@@ -129,6 +135,13 @@ function DocCardItem({ card }: { card: DocCard }) {
       {!card.available && (
         <span className="absolute top-4 right-4 px-2.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full uppercase tracking-wider">
           開発中
+        </span>
+      )}
+      
+      {/* アラートバッジ */}
+      {card.available && card.alertMessage && (
+        <span className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 bg-red-100 text-red-600 text-[10px] font-bold rounded-full shadow-sm">
+          <ShieldAlert size={12} /> {card.alertMessage}
         </span>
       )}
 

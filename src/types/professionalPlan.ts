@@ -20,6 +20,9 @@ export interface ProfessionalPlanDoc {
   createdAt: string;       // 作成年月日 "YYYY-MM-DD"
   startMonth?: string;     // 開始月 "YYYY-MM"
   status?: 'draft' | 'final'; // 'draft' (案) | 'final' (本案)
+  isReflected?: boolean;   // 専門的支援実施計画に反映済みか
+  reflectedStartMonth?: string; // 反映開始月 "YYYY-MM"
+  reflectedEndMonth?: string;   // 反映終了月 "YYYY-MM"
   familyIntention: string; // 利用児及び家族の生活に対する意向
   overallPolicy: string;   // 総合的な支援の方針
   longTermGoal: string;    // 長期目標（内容・期間等）

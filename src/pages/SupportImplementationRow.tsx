@@ -2,10 +2,11 @@ import React, { useRef, useEffect } from 'react';
 import { 
   Archive, 
   ArchiveRestore, 
-  RefreshCw, 
+  RefreshCw,
   Check, 
   Pencil,
-  Sparkles
+  ExternalLink,
+  ClipboardPaste
 } from 'lucide-react';
 import type { DailyReport } from '../types/supportPlan';
 
@@ -20,7 +21,7 @@ const SUPPORT_CONTENT_OPTIONS = [
 export const SupportImplementationRow = React.memo(({ 
   row, idx, isNewsletterCollapsed, isEditingDate, onEditDate, onFinishEditDate,
   updateRowDate, toggleSupportContent, updateRowContent, handleSyncFromNewsletter, archiveRow, newsletters,
-  isSelectionMode, isSelected, onToggleSelect, onSingleAiConvert
+  isSelectionMode, isSelected, onToggleSelect
 }: {
   row: DailyReport;
   idx: number;
@@ -65,6 +66,40 @@ export const SupportImplementationRow = React.memo(({
       if (container) {
         container.scrollTop += e.deltaY;
       }
+    }
+  };
+
+  const handleOpenGemini = () => {
+    const textToCopy = row.content.externalInfo || '';
+    if (!textToCopy.trim()) {
+      alert('コピーするツリー通信がありません。');
+      return;
+    }
+    
+    // クリップボードにコピー
+    navigator.clipboard.writeText(textToCopy)
+      .then(() => {
+        // コピー成功時に専用のGemini URLを新しいタブで開く
+        window.open('https://gemini.google.com/gem/673e06b69513', '_blank');
+      })
+      .catch(err => {
+        console.error('クリップボードへのコピーに失敗しました', err);
+        alert('クリップボードへのコピーに失敗しました。お使いのブラウザの設定をご確認ください。');
+      });
+  };
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text) {
+        alert('クリップボードが空です。');
+        return;
+      }
+      updateRowContent(idx, 'resultInfo', text);
+      if (row.content.isVerified) updateRowContent(idx, 'isVerified', false);
+    } catch (err) {
+      console.error('クリップボードの読み取りに失敗しました', err);
+      alert('クリップボードを読み取れませんでした。ブラウザの権限ポップアップで「許可」を押してください。');
     }
   };
 
@@ -250,14 +285,24 @@ export const SupportImplementationRow = React.memo(({
               {row.content.isVerified ? '済み' : '確認'}
             </button>
             {row.content.externalInfo?.trim() && (
-              <button
-                onClick={() => onSingleAiConvert(idx)}
-                className="flex items-center gap-1 px-4 py-1.5 md:px-2 md:py-0.5 rounded-full text-xs md:text-[10px] font-bold bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 transition-all shadow-md md:shadow-sm"
-                title="この行のツリー通信をAIで変換"
-              >
-                <Sparkles size={12} className="text-violet-600 animate-pulse" />
-                <span>AI変換</span>
-              </button>
+              <>
+                <button
+                  onClick={handleOpenGemini}
+                  className="flex items-center gap-1 px-4 py-1.5 md:px-2 md:py-0.5 rounded-full text-xs md:text-[10px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-all shadow-md md:shadow-sm"
+                  title="文章をコピーしてGeminiを開く"
+                >
+                  <ExternalLink size={12} className="text-blue-600" />
+                  <span>Geminiを開く</span>
+                </button>
+                <button
+                  onClick={handlePasteFromClipboard}
+                  className="flex items-center gap-1 px-4 py-1.5 md:px-2 md:py-0.5 rounded-full text-xs md:text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-all shadow-md md:shadow-sm"
+                  title="クリップボードのテキストを貼り付ける"
+                >
+                  <ClipboardPaste size={12} className="text-amber-600" />
+                  <span>貼り付け</span>
+                </button>
+              </>
             )}
           </div>
           <div className={`absolute bottom-3 right-4 md:bottom-1 md:right-2 text-[10px] md:text-[8px] font-bold transition-all duration-200 print:hidden pointer-events-none

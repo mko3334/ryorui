@@ -199,12 +199,37 @@ ${debugError.errorDetails ? JSON.stringify(debugError.errorDetails, null, 2) : '
       let latestProf: ProfessionalPlanDoc | null = null;
       if (profDocs && !profDocs.empty) {
         const list = profDocs.docs.map((d: any) => d.data() as ProfessionalPlanDoc);
-        list.sort((a: any, b: any) => {
-          const aM = a.startMonth || "";
-          const bM = b.startMonth || "";
-          return aM.localeCompare(bM);
-        });
-        latestProf = list[list.length - 1];
+        
+        // 1. 反映対象期間に入っているものを探す
+        const matched = list.find((p: any) => 
+          p.isReflected && 
+          p.reflectedStartMonth && 
+          p.reflectedEndMonth && 
+          currentMonth >= p.reflectedStartMonth && 
+          currentMonth <= p.reflectedEndMonth
+        );
+
+        if (matched) {
+          latestProf = matched;
+        } else {
+          // 2. なければ、現在表示中の月（currentMonth）以前のもののうち、最新の計画書をフォールバックとして取得
+          const pastPlans = list.filter((p: any) => {
+            const m = p.startMonth || (p.createdAt ? p.createdAt.slice(0, 7) : "");
+            return m && m <= currentMonth;
+          });
+
+          if (pastPlans.length > 0) {
+            pastPlans.sort((a: any, b: any) => {
+              const aM = a.startMonth || (a.createdAt ? a.createdAt.slice(0, 7) : "");
+              const bM = b.startMonth || (b.createdAt ? b.createdAt.slice(0, 7) : "");
+              return aM.localeCompare(bM);
+            });
+            latestProf = pastPlans[pastPlans.length - 1];
+          } else {
+            // 現在表示中の月より前の計画が一つもない場合は反映させない（未来の計画を過去に適用しない）
+            latestProf = null;
+          }
+        }
       }
       setProfPlan(latestProf);
 
@@ -977,18 +1002,6 @@ ${debugError.errorDetails ? JSON.stringify(debugError.errorDetails, null, 2) : '
 
         {/* PC表示用：アクションバー（モバイルでは非表示） */}
         <div className="hidden md:flex gap-3">
-          <button className="btn-secondary flex items-center gap-2" onClick={addRow}>
-            <Plus size={16} /> 行追加
-          </button>
-          <button className="btn-secondary flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200" onClick={() => setIsImportOpen(true)}>
-            <UploadCloud size={16} /> Excelインポート
-          </button>
-          <button className="btn-secondary flex items-center gap-2" onClick={handleExcelExport}>
-            <Download size={16} /> Excel出力
-          </button>
-          <button className="btn-secondary flex items-center gap-2" onClick={handlePrint}>
-            <Printer size={16} /> 印刷
-          </button>
           <button 
             className="btn-primary flex items-center gap-2" 
             onClick={handleSave}
@@ -1036,7 +1049,9 @@ ${debugError.errorDetails ? JSON.stringify(debugError.errorDetails, null, 2) : '
             </h3>
             {profPlan ? (
               <span className="text-[10px] text-primary font-semibold bg-primary/10 px-2 py-0.5 rounded-full">
-                専門的支援計画書より参照
+                {profPlan.isReflected && profPlan.reflectedStartMonth 
+                  ? `${profPlan.reflectedStartMonth.replace('-', '年')}月開始分の個別支援計画書（本案）から反映中`
+                  : '専門的支援計画書より参照'}
               </span>
             ) : (
               <span className="text-[10px] text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded-full">

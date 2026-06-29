@@ -83,6 +83,7 @@ function AppContent({ user }: { user: User }) {
           features: fd.features || [],
           imageKey: fd.imageKey || (fd.fullName ? fd.fullName[0] : (fd.name ? fd.name[0] : '?')),
           offices: fd.offices || [],
+          currentPlanEndMonth: fd.currentPlanEndMonth || '',
         };
       }) as Child[];
 

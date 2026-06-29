@@ -24,6 +24,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOfficeChange
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isHovered, setIsHovered] = useState(false);
+
+  const visuallyExpanded = isExpanded || isHovered;
 
   const filteredChildren = childrenData.filter(child => 
     child.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -33,13 +36,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside 
       style={{ touchAction: 'pan-y' }}
-      onMouseEnter={() => !isExpanded && onToggle()} // ホバーで展開
-      onMouseLeave={() => isExpanded && onToggle()} // 離れると格納
-      className={`app-sidebar fixed left-0 top-0 bottom-0 ${isExpanded ? 'w-sidebar-expanded' : 'w-sidebar-collapsed'} hidden md:flex flex-col p-6 pr-0 border-r border-green-500/15 bg-white/85 backdrop-blur-2xl z-[100] transition-all duration-normal print:hidden`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`app-sidebar fixed left-0 top-0 bottom-0 ${visuallyExpanded ? 'w-sidebar-expanded' : 'w-sidebar-collapsed'} hidden md:flex flex-col p-6 pr-0 border-r border-green-500/15 bg-white/85 backdrop-blur-2xl z-[100] transition-all duration-normal print:hidden`}
     >
       {/* ロゴ & トグル */}
       <div className="mb-6 px-2 pr-6 flex items-center justify-between">
-        <h1 className={`text-xl text-primary font-bold flex items-center gap-2 tracking-tight overflow-hidden transition-all duration-300 ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
+        <h1 className={`text-xl text-primary font-bold flex items-center gap-2 tracking-tight overflow-hidden transition-all duration-300 ${visuallyExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
           <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center flex-shrink-0">
             <Users size={18} />
           </div>
@@ -48,14 +51,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button 
           onClick={onToggle}
           className="p-1.5 hover:bg-black/5 rounded-lg text-slate-400 hover:text-primary transition-colors"
-          title={isExpanded ? "メニューを閉じる" : "メニューを開く"}
+          title={visuallyExpanded ? "メニューを閉じる" : "メニューを開く"}
         >
-          {isExpanded ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+          {visuallyExpanded ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
         </button>
       </div>
 
       {/* 事業所選択 */}
-      {isExpanded ? (
+      {visuallyExpanded ? (
         offices.length > 0 && (
           <div className="mb-6 px-2 pr-6">
             <div className="relative flex items-center bg-slate-100/60 border border-slate-200/50 rounded-xl px-3 py-2 text-slate-700 hover:border-primary/40 focus-within:border-primary/50 transition-all shadow-sm">
@@ -87,7 +90,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <nav className="flex flex-col gap-2 flex-1 overflow-hidden pr-0">
         {/* 検索バー */}
-        <div className={`mb-4 px-1 transition-all duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden mb-0'}`}>
+        <div className={`mb-4 px-1 transition-all duration-300 ${visuallyExpanded ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden mb-0'}`}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
             <input
@@ -101,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* 児童一覧ラベル */}
-        {isExpanded && (
+        {visuallyExpanded && (
           <div className="sidebar-text text-[11px] font-bold text-slate-400 mb-2 pl-4 uppercase tracking-wider">
             児童一覧
           </div>
@@ -115,9 +118,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <NavLink
                 key={child.id}
                 to={`/children/${child.id}`}
-                onClick={() => isExpanded && onToggle()} // 選択時に自動で閉じる
+                onClick={() => visuallyExpanded && !isExpanded && setIsHovered(false)} // 選択時に自動で閉じる
                 className={() =>
-                  `flex items-center rounded-xl transition-all duration-150 w-full text-left cursor-pointer relative gpu-accelerated ${isExpanded ? 'gap-3 p-2.5' : 'justify-center p-2.5'} ${
+                  `flex items-center rounded-xl transition-all duration-150 w-full text-left cursor-pointer relative gpu-accelerated ${visuallyExpanded ? 'gap-3 p-2.5' : 'justify-center p-2.5'} ${
                     isSelected
                       ? 'bg-primary text-white shadow-lg shadow-primary/20'
                       : 'text-slate-700 hover:bg-black/5'
@@ -129,13 +132,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {child.imageKey || (child.fullName ? child.fullName[0] : '?')}
                 </div>
                 {/* 名前 */}
-                <span className={`sidebar-text flex-1 text-sm font-medium transition-all duration-300 ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'} ${isSelected ? 'text-white' : 'text-slate-700'}`}>
+                <span className={`sidebar-text flex-1 text-sm font-medium transition-all duration-300 ${visuallyExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'} ${isSelected ? 'text-white' : 'text-slate-700'}`}>
                   {child.fullName || '(名前なし)'}
                 </span>
 
                 {/* 通知アラート */}
                 {child.needsMonitoring && (
-                  <div className={`flex items-center justify-center ${isExpanded ? 'mr-1' : 'absolute top-1 right-1'}`} title="モニタリング更新期（5ヶ月経過）">
+                  <div className={`flex items-center justify-center ${visuallyExpanded ? 'mr-1' : 'absolute top-1 right-1'}`} title="モニタリング更新期（5ヶ月経過）">
                     <span className="relative flex h-2.5 w-2.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
@@ -144,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 )}
 
                 {/* 矢印 */}
-                {isExpanded && !child.needsMonitoring && (
+                {visuallyExpanded && !child.needsMonitoring && (
                   <div className="sidebar-text flex-shrink-0">
                     <ChevronRight size={16} className={isSelected ? 'text-white' : 'text-slate-300'} />
                   </div>
@@ -159,7 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `flex items-center rounded-lg transition-all duration-150 w-full text-left cursor-pointer font-medium ${isExpanded ? 'gap-3 p-3' : 'justify-center p-3'} ${
+              `flex items-center rounded-lg transition-all duration-150 w-full text-left cursor-pointer font-medium ${visuallyExpanded ? 'gap-3 p-3' : 'justify-center p-3'} ${
                 isActive ? 'bg-primary/10 text-primary shadow-sm' : 'text-slate-700 hover:bg-black/5'
               }`
             }
@@ -167,27 +170,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex-shrink-0 flex items-center justify-center">
               <SettingsIcon size={20} />
             </div>
-            <span className={`sidebar-text text-[15px] transition-all duration-300 ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'}`}>設定</span>
+            <span className={`sidebar-text text-[15px] transition-all duration-300 ${visuallyExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'}`}>設定</span>
           </NavLink>
 
           <button
             onClick={() => auth.signOut()}
-            className={`flex items-center rounded-lg transition-all duration-150 w-full text-left cursor-pointer text-red-500 hover:bg-red-50 font-medium mt-1 ${isExpanded ? 'gap-3 p-3' : 'justify-center p-3'}`}
+            className={`flex items-center rounded-lg transition-all duration-150 w-full text-left cursor-pointer text-red-500 hover:bg-red-50 font-medium mt-1 ${visuallyExpanded ? 'gap-3 p-3' : 'justify-center p-3'}`}
           >
             <div className="flex-shrink-0 flex items-center justify-center">
               <LogOut size={20} />
             </div>
-            <span className={`sidebar-text text-[15px] transition-all duration-300 ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'}`}>ログアウト</span>
+            <span className={`sidebar-text text-[15px] transition-all duration-300 ${visuallyExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'}`}>ログアウト</span>
           </button>
         </div>
       </nav>
 
       {/* スタッフ情報 */}
-      <div className={`mt-auto pt-4 border-t border-green-500/15 flex items-center overflow-hidden ${isExpanded ? 'gap-3' : 'justify-center'}`}>
+      <div className={`mt-auto pt-4 border-t border-green-500/15 flex items-center overflow-hidden ${visuallyExpanded ? 'gap-3' : 'justify-center'}`}>
         <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
           <span className="text-[12px] font-bold text-slate-600">ST</span>
         </div>
-        <div className={`sidebar-text overflow-hidden transition-all duration-300 ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
+        <div className={`sidebar-text overflow-hidden transition-all duration-300 ${visuallyExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
           <p className="m-0 text-sm font-semibold truncate text-slate-800">スタッフ 太郎</p>
           <p className="m-0 text-[11px] text-slate-500">管理者</p>
         </div>

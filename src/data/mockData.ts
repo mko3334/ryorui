@@ -14,6 +14,7 @@ export interface Child {
   imageKey?: string;
   offices?: string[];
   needsMonitoring?: boolean;
+  currentPlanEndMonth?: string;
 }
 
 export const mockChildrenData: Child[] = [
