@@ -6,7 +6,8 @@ import {
   Check, 
   Pencil,
   ExternalLink,
-  ClipboardPaste
+  ClipboardPaste,
+  Trash2
 } from 'lucide-react';
 import type { DailyReport } from '../types/supportPlan';
 
@@ -21,7 +22,7 @@ const SUPPORT_CONTENT_OPTIONS = [
 export const SupportImplementationRow = React.memo(({ 
   row, idx, isNewsletterCollapsed, isEditingDate, onEditDate, onFinishEditDate,
   updateRowDate, toggleSupportContent, updateRowContent, handleSyncFromNewsletter, archiveRow, newsletters,
-  isSelectionMode, isSelected, onToggleSelect
+  isSelectionMode, isSelected, onToggleSelect, isRecentlyImported, onDeleteRow
 }: {
   row: DailyReport;
   idx: number;
@@ -39,6 +40,8 @@ export const SupportImplementationRow = React.memo(({
   isSelected?: boolean;
   onToggleSelect?: () => void;
   onSingleAiConvert: (idx: number) => void;
+  isRecentlyImported?: boolean;
+  onDeleteRow: (idx: number) => void;
 }) => {
   const resultRef = useRef<HTMLTextAreaElement>(null);
   const futureRef = useRef<HTMLTextAreaElement>(null);
@@ -106,7 +109,13 @@ export const SupportImplementationRow = React.memo(({
   return (
     <div
       className={`border-b border-slate-300 ${row.archived ? 'opacity-40 bg-slate-100 print:hidden' : 'print:table-row'}
-      flex flex-col gap-4 p-4 md:table-row md:p-0 print:p-0 relative ${isSelected ? 'bg-primary/5 border-l-4 border-l-primary' : ''}`}
+      flex flex-col gap-4 p-4 md:table-row md:p-0 print:p-0 relative transition-colors duration-200 ${
+        isSelected 
+          ? 'bg-primary/5 border-l-4 border-l-primary' 
+          : isRecentlyImported 
+            ? 'bg-emerald-50/40 md:bg-emerald-50/20 border-l-4 border-l-emerald-500 shadow-2xs' 
+            : ''
+      }`}
       style={{ touchAction: 'pan-y' }}
     >
       
@@ -122,8 +131,15 @@ export const SupportImplementationRow = React.memo(({
         </div>
       )}
 
-      {/* モバイル用アーカイブボタン */}
-      <div className="absolute top-4 right-4 md:hidden print:hidden z-10">
+      {/* モバイル用アクションボタン */}
+      <div className="absolute top-4 right-4 md:hidden print:hidden z-10 flex items-center gap-2">
+        <button 
+          onClick={() => onDeleteRow(idx)} 
+          className="text-slate-400 hover:text-red-500 p-2 bg-white rounded-full shadow-sm border border-slate-100 transition-colors"
+          title="この日の専門的支援記録を削除"
+        >
+          <Trash2 size={18} />
+        </button>
         <button onClick={() => archiveRow(idx)} className="text-slate-400 p-2 bg-white rounded-full shadow-sm border border-slate-100">
           {row.archived ? <ArchiveRestore size={18} /> : <Archive size={18} />}
         </button>
@@ -131,7 +147,9 @@ export const SupportImplementationRow = React.memo(({
 
       {/* 日付 */}
       <div
-        className="p-0 md:p-2 border-r border-slate-300 w-full md:w-[70px] bg-slate-50/50 md:bg-transparent rounded-xl md:rounded-none print:rounded-none flex flex-col md:table-cell print:table-cell"
+        className={`p-0 md:p-2 border-r border-slate-300 w-full md:w-[70px] ${
+          isRecentlyImported ? 'bg-emerald-50/50 md:bg-emerald-50/30' : 'bg-slate-50/50 md:bg-transparent'
+        } rounded-xl md:rounded-none print:rounded-none flex flex-col md:table-cell print:table-cell`}
         style={{ touchAction: 'pan-y' }}
       >
         <div className="md:hidden print:hidden text-[11px] font-bold text-slate-500 bg-slate-200/50 px-3 py-1.5 border-b border-slate-200">日付</div>
@@ -163,10 +181,17 @@ export const SupportImplementationRow = React.memo(({
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center md:items-start gap-2 group">
-              <span className="font-bold text-lg md:text-sm print:text-[10px] text-slate-800">
-                {row.date || '─'}
-              </span>
+            <div className="flex flex-col items-center md:items-start gap-1 group">
+              <div className="flex items-center gap-1 flex-wrap justify-center md:justify-start">
+                <span className="font-bold text-lg md:text-sm print:text-[20px] text-slate-800">
+                  {row.date || '─'}
+                </span>
+                {isRecentlyImported && (
+                  <span className="text-[9px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 px-1 py-0.2 rounded-full shadow-2xs print:hidden whitespace-nowrap">
+                    📥 反映
+                  </span>
+                )}
+              </div>
               {!row.archived && (
                 <button
                   onClick={onEditDate}
@@ -182,9 +207,9 @@ export const SupportImplementationRow = React.memo(({
 
       {/* ツリー通信 */}
       <div
-        className={`p-0 md:p-3 border-r border-slate-300 align-top relative group w-full transition-all duration-300
-          ${isNewsletterCollapsed ? 'md:w-[50px] md:min-w-[50px]' : ''}
-          bg-white border-2 border-primary/20 shadow-md md:border-0 md:bg-primary/5 md:shadow-none rounded-xl md:rounded-none flex flex-col md:table-cell print:hidden`}
+        className={`p-0 md:p-3 border-r border-slate-300 align-top relative group transition-all duration-300
+          ${isNewsletterCollapsed ? 'hidden md:table-cell md:w-[50px] md:min-w-[50px]' : 'w-full flex flex-col md:table-cell'}
+          bg-white border-2 border-primary/20 shadow-md md:border-0 md:bg-primary/5 md:shadow-none rounded-xl md:rounded-none print:hidden`}
         style={{ touchAction: 'pan-y' }}
       >
         
@@ -238,7 +263,7 @@ export const SupportImplementationRow = React.memo(({
         </div>
         <div className="hidden print:flex flex-col gap-0.5 p-1">
           {(row.content.supportContent || []).map((opt: string) => (
-            <div key={opt} className="text-[8pt] leading-tight font-medium border-l-2 border-primary pl-1">
+            <div key={opt} className="print:text-[15px] print:text-black print:leading-snug font-medium border-l-2 border-primary print:border-l-0 pl-1 print:pl-0">
               {opt}
             </div>
           ))}
@@ -273,6 +298,26 @@ export const SupportImplementationRow = React.memo(({
             }}
           />
           <div className="absolute bottom-3 left-4 md:bottom-1 md:left-2 flex items-center gap-2 print:hidden">
+            {row.content.externalInfo?.trim() && (
+              <>
+                <button
+                  onClick={handleOpenGemini}
+                  className="flex items-center gap-1 px-4 py-1.5 md:px-2 md:py-0.5 rounded-full text-xs md:text-[10px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-all shadow-md md:shadow-sm"
+                  title="文章をコピーしてGeminiを開く"
+                >
+                  <ExternalLink size={12} className="text-blue-600" />
+                  <span>①Geminiを開く</span>
+                </button>
+                <button
+                  onClick={handlePasteFromClipboard}
+                  className="flex items-center gap-1 px-4 py-1.5 md:px-2 md:py-0.5 rounded-full text-xs md:text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-all shadow-md md:shadow-sm"
+                  title="クリップボードのテキストを貼り付ける"
+                >
+                  <ClipboardPaste size={12} className="text-amber-600" />
+                  <span>②貼り付ける</span>
+                </button>
+              </>
+            )}
             <button
               onClick={() => updateRowContent(idx, 'isVerified', !row.content.isVerified)}
               className={`flex items-center gap-1.5 px-4 py-1.5 md:px-2 md:py-0.5 rounded-full text-xs md:text-[10px] font-bold transition-all duration-200 shadow-md md:shadow-sm ${
@@ -282,36 +327,16 @@ export const SupportImplementationRow = React.memo(({
               }`}
             >
               {row.content.isVerified ? <Check size={14} /> : null}
-              {row.content.isVerified ? '済み' : '確認'}
+              <span>{row.content.isVerified ? '③済み' : '③確認'}</span>
             </button>
-            {row.content.externalInfo?.trim() && (
-              <>
-                <button
-                  onClick={handleOpenGemini}
-                  className="flex items-center gap-1 px-4 py-1.5 md:px-2 md:py-0.5 rounded-full text-xs md:text-[10px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-all shadow-md md:shadow-sm"
-                  title="文章をコピーしてGeminiを開く"
-                >
-                  <ExternalLink size={12} className="text-blue-600" />
-                  <span>Geminiを開く</span>
-                </button>
-                <button
-                  onClick={handlePasteFromClipboard}
-                  className="flex items-center gap-1 px-4 py-1.5 md:px-2 md:py-0.5 rounded-full text-xs md:text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-all shadow-md md:shadow-sm"
-                  title="クリップボードのテキストを貼り付ける"
-                >
-                  <ClipboardPaste size={12} className="text-amber-600" />
-                  <span>貼り付け</span>
-                </button>
-              </>
-            )}
           </div>
           <div className={`absolute bottom-3 right-4 md:bottom-1 md:right-2 text-[10px] md:text-[8px] font-bold transition-all duration-200 print:hidden pointer-events-none
-            ${(row.content.resultInfo?.length || 0) > 130
+            ${(row.content.resultInfo?.length || 0) > 140
               ? 'text-red-500 opacity-100'
               : 'text-slate-400 opacity-0 group-focus-within/result:opacity-100'}`}>
-            {(row.content.resultInfo?.length || 0)}/130
+            {(row.content.resultInfo?.length || 0)}/140
           </div>
-          <div className="hidden print:block print:text-[9pt] print:leading-snug whitespace-pre-wrap break-words">{row.content.resultInfo}</div>
+          <div className="hidden print:block print:text-[18px] print:leading-snug whitespace-pre-wrap break-words">{row.content.resultInfo}</div>
         </div>
       </div>
 
@@ -342,15 +367,28 @@ export const SupportImplementationRow = React.memo(({
               : 'text-slate-400 opacity-0 group-focus-within/plan:opacity-100'}`}>
             {(row.content.futurePlan?.length || 0)}/80
           </div>
-          <div className="hidden print:block print:text-[9pt] print:leading-snug whitespace-pre-wrap break-words">{row.content.futurePlan}</div>
+          <div className="hidden print:block print:text-[18px] print:leading-snug whitespace-pre-wrap break-words">{row.content.futurePlan}</div>
         </div>
       </div>
 
-      {/* PC用アーカイブ列（モバイル・印刷時は非表示） */}
-      <div className={`hidden md:table-cell p-1 md:p-2 text-center z-10 border-l border-slate-300 print:hidden ${row.archived ? 'bg-slate-50' : 'bg-white'} w-[50px] md:w-[60px]`}>
-        <button onClick={() => archiveRow(idx)} className="text-slate-400 hover:text-primary transition-colors active:scale-90" title={row.archived ? '元に戻す' : 'アーカイブ'}>
-          {row.archived ? <ArchiveRestore size={18} /> : <Archive size={18} />}
-        </button>
+      {/* PC用アクション列（削除 & アーカイブ / モバイル・印刷時は非表示） */}
+      <div className={`hidden md:table-cell p-1 md:p-2 text-center z-10 border-l border-slate-300 print:hidden ${row.archived ? 'bg-slate-50' : 'bg-white'} w-[70px] md:w-[80px]`}>
+        <div className="flex items-center justify-center gap-1">
+          <button
+            onClick={() => onDeleteRow(idx)}
+            className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors active:scale-90"
+            title="この日の専門的支援記録を削除"
+          >
+            <Trash2 size={16} />
+          </button>
+          <button
+            onClick={() => archiveRow(idx)}
+            className="text-slate-400 hover:text-primary hover:bg-slate-100 p-1.5 rounded-lg transition-colors active:scale-90"
+            title={row.archived ? '元に戻す' : 'アーカイブ'}
+          >
+            {row.archived ? <ArchiveRestore size={16} /> : <Archive size={16} />}
+          </button>
+        </div>
       </div>
     </div>
   );

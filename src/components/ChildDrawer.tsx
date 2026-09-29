@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, User, ChevronRight, Settings, LogOut, Building2 } from 'lucide-react';
+import { X, User, ChevronRight, Settings, LogOut, Building2, Calendar } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Child } from '../data/mockData';
@@ -95,6 +95,38 @@ export const ChildDrawer: React.FC<ChildDrawerProps> = ({
 
             {/* リスト */}
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2 no-scrollbar touch-pan-y pointer-events-auto">
+              {/* 月間支援実施状況リンク */}
+              <button
+                onClick={() => {
+                  onClose();
+                  navigate('/monthly-summary');
+                }}
+                className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-200 group text-left border relative ${
+                  window.location.pathname === '/monthly-summary'
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20 border-primary'
+                    : 'bg-white hover:bg-slate-50 border-slate-100 shadow-sm'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-transform group-hover:scale-110 ${
+                  window.location.pathname === '/monthly-summary' ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'
+                }`}>
+                  <Calendar size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-bold truncate ${
+                    window.location.pathname === '/monthly-summary' ? 'text-white' : 'text-slate-800'
+                  }`}>
+                    月間支援実施状況
+                  </p>
+                  <p className={`text-[11px] truncate ${
+                    window.location.pathname === '/monthly-summary' ? 'text-white/70' : 'text-slate-400'
+                  }`}>
+                    全児童の記入状況を一括確認
+                  </p>
+                </div>
+                <ChevronRight size={16} className={window.location.pathname === '/monthly-summary' ? 'text-white' : 'text-slate-300'} />
+              </button>
+
               {childrenData.map((child) => {
                 const isSelected = selectedChildId === child.id;
                 return (

@@ -35,7 +35,9 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({ actions 
               }
             }}
             disabled={action.disabled}
-            className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl transition-all active:scale-95 border border-white/20 backdrop-blur-md pointer-events-auto ${
+            className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl transition-all active:scale-95 border border-white/20 backdrop-blur-md ${
+              isOpen ? 'pointer-events-auto' : 'pointer-events-none'
+            } ${
               action.disabled ? 'opacity-50 cursor-not-allowed' : ''
             } ${
               action.colorClass || 'bg-white/95 text-slate-700 hover:bg-slate-50'

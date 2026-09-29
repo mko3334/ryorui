@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Users, Settings as SettingsIcon, LogOut, ChevronRight, PanelLeftClose, PanelLeftOpen, Search, Building2 } from 'lucide-react';
+import { Users, Settings as SettingsIcon, LogOut, ChevronRight, PanelLeftClose, PanelLeftOpen, Search, Building2, Calendar, Bell } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import type { Child } from '../data/mockData';
 
@@ -42,11 +42,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     >
       {/* ロゴ & トグル */}
       <div className="mb-6 px-2 pr-6 flex items-center justify-between">
-        <h1 className={`text-xl text-primary font-bold flex items-center gap-2 tracking-tight overflow-hidden transition-all duration-300 ${visuallyExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
+        <h1 className={`text-xl text-primary font-bold flex items-center gap-2.5 tracking-tight overflow-hidden transition-all duration-300 ${visuallyExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
           <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center flex-shrink-0">
             <Users size={18} />
           </div>
-          <span className="sidebar-text text-xl">書類管理</span>
+          <div className="flex flex-col leading-tight">
+            <span className="sidebar-text text-lg font-bold">書類管理</span>
+            <span className="text-[9px] text-slate-400 font-mono tracking-tight font-normal">v2026/07/30 17:12</span>
+          </div>
         </h1>
         <button 
           onClick={onToggle}
@@ -112,6 +115,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* 児童リスト */}
         <div className="flex-1 flex flex-col gap-1.5 overflow-y-auto gpu-accelerated">
+          {/* 月間実施状況一括表示 */}
+          <NavLink
+            to="/monthly-summary"
+            onClick={() => visuallyExpanded && !isExpanded && setIsHovered(false)}
+            className={() =>
+              `flex items-center rounded-xl transition-all duration-150 w-full text-left cursor-pointer relative gpu-accelerated ${visuallyExpanded ? 'gap-3 p-2.5' : 'justify-center p-2.5'} ${
+                window.location.pathname === '/monthly-summary'
+                  ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                  : 'text-slate-700 hover:bg-black/5'
+              }`
+            }
+          >
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold flex-shrink-0 ${
+              window.location.pathname === '/monthly-summary' ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'
+            }`}>
+              <Calendar size={14} />
+            </div>
+            <span className={`sidebar-text flex-1 text-sm font-semibold transition-all duration-300 ${visuallyExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'} ${
+              window.location.pathname === '/monthly-summary' ? 'text-white' : 'text-slate-700'
+            }`}>
+              月間支援実施状況
+            </span>
+            {visuallyExpanded && (
+              <div className="sidebar-text flex-shrink-0">
+                <ChevronRight size={16} className={window.location.pathname === '/monthly-summary' ? 'text-white' : 'text-slate-300'} />
+              </div>
+            )}
+          </NavLink>
+
           {filteredChildren.map(child => {
             const isSelected = selectedChildId === child.id;
             return (
@@ -172,6 +204,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <span className={`sidebar-text text-[15px] transition-all duration-300 ${visuallyExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'}`}>設定</span>
           </NavLink>
+
+          <button
+            type="button"
+            onClick={() => alert('新しい通知はありません')}
+            className={`flex items-center rounded-lg transition-all duration-150 w-full text-left cursor-pointer text-slate-700 hover:bg-black/5 font-medium mt-1 ${visuallyExpanded ? 'gap-3 p-3' : 'justify-center p-3'}`}
+            title="通知"
+          >
+            <div className="flex-shrink-0 flex items-center justify-center relative">
+              <Bell size={20} />
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+            </div>
+            <span className={`sidebar-text text-[15px] transition-all duration-300 ${visuallyExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'}`}>通知</span>
+          </button>
 
           <button
             onClick={() => auth.signOut()}

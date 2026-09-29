@@ -515,12 +515,17 @@ export const ProfessionalPerspective: React.FC<Props> = ({ childrenData, selecte
     
     setIsSaving(true);
     try {
-      const startMonth = plan.createdAt.slice(0, 7); // YYYY-MM
+      const startMonth = plan.startMonth || plan.createdAt.slice(0, 7); // YYYY-MM
       
       // 5ヶ月後を終了月とする（計6ヶ月間）
-      const date = new Date(`${startMonth}-01T00:00:00`);
-      date.setMonth(date.getMonth() + 5);
-      const endMonth = date.toISOString().slice(0, 7);
+      const [sYear, sMonth] = startMonth.split('-').map(Number);
+      let eYear = sYear;
+      let eMonth = sMonth + 5;
+      if (eMonth > 12) {
+        eMonth -= 12;
+        eYear += 1;
+      }
+      const endMonth = `${eYear}-${String(eMonth).padStart(2, '0')}`;
       
       const updatedPlan: ProfessionalPlanDoc = {
         ...plan,

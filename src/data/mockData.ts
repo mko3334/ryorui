@@ -15,6 +15,9 @@ export interface Child {
   offices?: string[];
   needsMonitoring?: boolean;
   currentPlanEndMonth?: string;
+  serviceType?: string;
+  serviceCategory?: string;
+  isHoukagoDay?: boolean;
 }
 
 export const mockChildrenData: Child[] = [

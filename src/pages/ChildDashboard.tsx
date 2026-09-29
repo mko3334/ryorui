@@ -5,6 +5,9 @@ import type { Child } from '../data/mockData';
 
 type ChildDashboardProps = {
   childrenData: Child[];
+  selectedOfficeId: string;
+  onOfficeChange: (officeId: string) => void;
+  offices: { id: string, name: string }[];
 };
 
 type DocCard = {
@@ -18,7 +21,12 @@ type DocCard = {
   alertMessage?: string;
 };
 
-export const ChildDashboard: React.FC<ChildDashboardProps> = ({ childrenData }) => {
+export const ChildDashboard: React.FC<ChildDashboardProps> = ({ 
+  childrenData,
+  selectedOfficeId,
+  onOfficeChange,
+  offices
+}) => {
   const { childId } = useParams<{ childId: string }>();
   const navigate = useNavigate();
 
@@ -60,10 +68,10 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ childrenData }) 
     {
       id: 'force-sheet',
       title: '強行シート',
-      description: '特定の支援方钕や注意事項、緊急時対応など重点事項をまとめます。',
+      description: '特定の支援方針や注意事項、緊急時対応など重点事項をまとめます。',
       icon: <ShieldAlert size={28} />,
       path: `/children/${childId}/force-sheet`,
-      available: false,
+      available: true,
       color: 'from-orange-500 to-red-500',
     },
   ];
@@ -105,6 +113,53 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ childrenData }) 
           )}
         </div>
       </div>
+
+      {/* 事業所切り替えメニュー (複数事業所所属の児童のみ表示) */}
+      {(() => {
+        const getOfficeTag = (officeId: string): string => {
+          if (officeId === 'LNrWc8f6G703aUYRZ5e2') return 'サーチ';
+          if (officeId === 'nWioUcWXUskreYjmSL8p') return 'ホーム';
+          return '';
+        };
+
+        const childOfficeTags = Array.isArray(selectedChild.offices)
+          ? selectedChild.offices
+          : typeof selectedChild.offices === 'string'
+            ? [selectedChild.offices]
+            : [];
+
+        if (childOfficeTags.length <= 1) return null;
+
+        return (
+          <div className="glass-panel p-4 bg-slate-50 border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 -mt-6">
+            <div className="text-sm font-bold text-slate-600 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              この児童は複数の事業所（サーチ・ホーム）に登録されています。表示する事業所を選択してください：
+            </div>
+            <div className="flex bg-slate-200/60 p-1 rounded-xl gap-1 shrink-0">
+              {offices
+                .filter(o => childOfficeTags.includes(getOfficeTag(o.id)))
+                .map(office => {
+                  const isActive = selectedOfficeId === office.id;
+                  const displayName = getOfficeTag(office.id);
+                  return (
+                    <button
+                      key={office.id}
+                      onClick={() => onOfficeChange(office.id)}
+                      className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+                        isActive
+                          ? 'bg-white text-slate-800 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      {displayName}
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 書類選択グリッド */}
       <div>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
-import { Header } from './Header';
 import { MobileNavigation } from './MobileNavigation';
 import { ChildDrawer } from './ChildDrawer';
 import { useParams, Outlet, useLocation } from 'react-router-dom';
@@ -44,17 +43,7 @@ export const Layout: React.FC<LayoutProps> = ({
     };
   }, []);
 
-  const getTitle = () => {
-    const path = window.location.pathname;
-    if (path.includes('/support-plan')) return '専門的支援実施計画';
-    if (path.includes('/assessment'))  return 'アセスメントシート';
-    if (path.includes('/force-sheet')) return '強行シート';
-    if (path.includes('/edit'))        return '児童情報を編集';
-    if (path.includes('/new'))         return '新規児童登録';
-    if (childId)                       return '書類を選択';
-    if (path.includes('/settings'))    return '設定';
-    return '書類管理システム';
-  };
+
 
   return (
     <div className="flex h-[100dvh] overflow-hidden relative">
@@ -78,17 +67,11 @@ export const Layout: React.FC<LayoutProps> = ({
           />
         )}
 
-        <Header
-          title={getTitle()}
-          onOpenDrawer={() => setIsDrawerOpen(true)}
-        />
-
         {/* スクロールコンテナ
-            - pb-20 md:pb-8: モバイル底部ナビ(80px)分の余白をここで確保
-            - overscrollBehavior contain: 親へのスクロール連鎖を防ぐ */}
+            - pb-20 md:pb-5: モバイル底部ナビ分の余白を確保しつつ画面を広く活用 */}
         <div
           className={cn(
-            'flex-1 overflow-y-auto min-h-0 p-4 md:p-8 pb-20 md:pb-8 transition-all',
+            'flex-1 overflow-y-auto min-h-0 p-3 md:p-5 pb-20 md:pb-5 transition-all',
             isLocked ? 'overflow-hidden touch-none brightness-95' : ''
           )}
           style={{ overscrollBehavior: 'contain' }}

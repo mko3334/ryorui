@@ -17,7 +17,7 @@ export const Header: React.FC<HeaderProps> = ({ title, onOpenDrawer }) => {
 
       <div className="flex items-center gap-2 md:gap-4">
         <span className="text-[9px] md:text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-1 rounded border border-slate-200/60 select-none print:hidden">
-          v2026/06/05 13:51
+          v2026/07/30 17:12
         </span>
         <div className="hidden md:flex relative items-center bg-slate-100/50 rounded-full px-4 py-2 border border-slate-200 focus-within:ring-2 focus-within:ring-primary/20 transition-all group w-64">
           <Search size={16} className="text-slate-400 mr-2 group-focus-within:text-primary transition-colors" />

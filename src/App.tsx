@@ -11,22 +11,15 @@ import { SupportImplementation } from './pages/SupportImplementation';
 import { ProfessionalPerspective } from './pages/ProfessionalPerspective';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
+import { MonthlySummary } from './pages/MonthlySummary';
+import { ForceSheet } from './pages/ForceSheet';
 import type { Child } from './data/mockData';
 import { mockChildrenData } from './data/mockData';
+import { matchesOffice } from './lib/officeUtils';
 import './index.css';
 
 const COLLECTION_NAME = 'children';
 
-// ---- 開発中プレースホルダー ----
-function UnderDevelopment({ title }: { title: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-64 gap-4 glass-panel">
-      <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-full uppercase tracking-wider">開発中</span>
-      <h2 className="text-slate-500 text-xl font-medium">{title}</h2>
-      <p className="text-sm text-slate-400">この画面は現在開発中です。</p>
-    </div>
-  );
-}
 
 // ---- 認証済みアプリ本体 ----
 function AppContent({ user }: { user: User }) {
@@ -68,22 +61,74 @@ function AppContent({ user }: { user: User }) {
       const snapshot = await getDocs(q);
       const childList = snapshot.docs.map(d => {
         const fd = d.data();
+
+        // 姓名の解決 (旧形式: fullName, name / 新形式: lastName, firstName)
+        let resolvedName = '';
+        if (fd.fullName && typeof fd.fullName === 'string' && fd.fullName.trim()) {
+          resolvedName = fd.fullName.trim();
+        } else if (fd.name && typeof fd.name === 'string' && fd.name.trim()) {
+          resolvedName = fd.name.trim();
+        } else if (fd.lastName || fd.firstName) {
+          resolvedName = `${fd.lastName || ''} ${fd.firstName || ''}`.trim();
+        }
+
+        // ふりがなの解決 (旧形式: nameKana, nameFurigana / 新形式: lastNameFurigana, firstNameFurigana)
+        let resolvedKana = '';
+        if (fd.nameKana && typeof fd.nameKana === 'string' && fd.nameKana.trim()) {
+          resolvedKana = fd.nameKana.trim();
+        } else if (fd.nameFurigana && typeof fd.nameFurigana === 'string' && fd.nameFurigana.trim()) {
+          resolvedKana = fd.nameFurigana.trim();
+        } else if (fd.lastNameFurigana || fd.firstNameFurigana) {
+          resolvedKana = `${fd.lastNameFurigana || ''} ${fd.firstNameFurigana || ''}`.trim();
+        }
+
+        // 年齢の解決 (age または birthDate / birthdate からの算出)
+        let resolvedAge = Number(fd.age) || 0;
+        const bDateStr = fd.birthDate || fd.birthdate;
+        if (!resolvedAge && bDateStr) {
+          const birth = new Date(bDateStr);
+          if (!isNaN(birth.getTime())) {
+            const today = new Date();
+            let calcAge = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+              calcAge--;
+            }
+            resolvedAge = calcAge > 0 ? calcAge : 0;
+          }
+        }
+
+        // 保護者勤務先の解決
+        const workplaceInfo = [
+          fd.workplace1Name ? `${fd.workplace1Name}${fd.workplace1Contact ? ` (${fd.workplace1Contact})` : ''}` : '',
+          fd.workplace2Name ? `${fd.workplace2Name}${fd.workplace2Contact ? ` (${fd.workplace2Contact})` : ''}` : ''
+        ].filter(Boolean).join(' / ');
+
         return {
           id: d.id,
-          fullName: fd.fullName || fd.name || '(名前なし)',
-          nameKana: fd.nameKana || '',
-          age: Number(fd.age) || 0,
-          grade: fd.grade || '',
-          schoolName: fd.schoolName || '',
+          fullName: resolvedName || '(名前なし)',
+          nameKana: resolvedKana,
+          age: resolvedAge,
+          grade: fd.grade || fd.schoolGrade || '',
+          schoolName: fd.schoolName || fd.school || '',
           address: fd.address || '',
-          phoneNumberHome: fd.phoneNumberHome || '',
-          phoneNumberEmergency: fd.phoneNumberEmergency || '',
-          parentWorkplaceContact: fd.parentWorkplaceContact || '',
+          phoneNumberHome: fd.phoneNumberHome || fd.phoneNumber || '',
+          phoneNumberEmergency: fd.phoneNumberEmergency || fd.contact1Phone || fd.contact2Phone || '',
+          parentWorkplaceContact: fd.parentWorkplaceContact || workplaceInfo,
           familyStructure: fd.familyStructure || '',
           features: fd.features || [],
-          imageKey: fd.imageKey || (fd.fullName ? fd.fullName[0] : (fd.name ? fd.name[0] : '?')),
-          offices: fd.offices || [],
+          imageKey: fd.imageKey || (resolvedName ? resolvedName[0] : '?'),
+          offices: Array.from(new Set([
+            ...(Array.isArray(fd.offices) ? fd.offices : fd.offices ? [fd.offices] : []),
+            ...(Array.isArray(fd.tags) ? fd.tags : fd.tags ? [fd.tags] : []),
+            ...(Array.isArray(fd.officeTags) ? fd.officeTags : fd.officeTags ? [fd.officeTags] : []),
+            ...(fd.office ? [fd.office] : []),
+            ...(fd.officeId ? [fd.officeId] : []),
+          ].map(String).filter(Boolean))),
           currentPlanEndMonth: fd.currentPlanEndMonth || '',
+          serviceType: fd.serviceType || '',
+          serviceCategory: fd.serviceCategory || '',
+          isHoukagoDay: typeof fd.isHoukagoDay === 'boolean' ? fd.isHoukagoDay : undefined,
         };
       }) as Child[];
 
@@ -102,14 +147,7 @@ function AppContent({ user }: { user: User }) {
     fetchChildrenAndPlans();
   }, [fetchChildrenAndPlans]);
 
-  // 事業所ごとの児童フィルタ
-  const getOfficeTag = (officeId: string): string => {
-    if (officeId === 'LNrWc8f6G703aUYRZ5e2') return 'サーチ';
-    if (officeId === 'nWioUcWXUskreYjmSL8p') return 'ホーム';
-    return '';
-  };
 
-  const currentOfficeTag = getOfficeTag(selectedOfficeId);
 
   // モニタリング通知判定ヘルパー
   const checkNeedsMonitoring = (childId: string) => {
@@ -145,19 +183,10 @@ function AppContent({ user }: { user: User }) {
   const filteredChildren = children
     .filter(child => {
       const childOffices = child.offices;
-      if (!childOffices) {
+      if (!childOffices || (Array.isArray(childOffices) && childOffices.length === 0)) {
         return selectedOfficeId === 'LNrWc8f6G703aUYRZ5e2';
       }
-      if (Array.isArray(childOffices)) {
-        if (childOffices.length === 0) {
-          return selectedOfficeId === 'LNrWc8f6G703aUYRZ5e2';
-        }
-        return childOffices.includes(currentOfficeTag);
-      }
-      if (typeof childOffices === 'string') {
-        return childOffices === currentOfficeTag;
-      }
-      return false;
+      return matchesOffice(selectedOfficeId, childOffices);
     })
     .map(child => ({
       ...child,
@@ -175,9 +204,19 @@ function AppContent({ user }: { user: User }) {
         />
       }>
         <Route path="/" element={<ChildList />} />
+        <Route path="/monthly-summary" element={
+          <MonthlySummary 
+            childrenData={filteredChildren} 
+            selectedOfficeId={selectedOfficeId} 
+            offices={offices} 
+          />
+        } />
         <Route path="/children/:childId" element={
           <ChildDashboard 
-            childrenData={filteredChildren} 
+            childrenData={children} 
+            selectedOfficeId={selectedOfficeId}
+            onOfficeChange={setSelectedOfficeId}
+            offices={offices}
           />
         } />
         <Route path="/children/:childId/professional-perspective" element={
@@ -195,7 +234,13 @@ function AppContent({ user }: { user: User }) {
             offices={offices}
           />
         } />
-        <Route path="/children/:childId/force-sheet" element={<UnderDevelopment title="強行シート" />} />
+        <Route path="/children/:childId/force-sheet" element={
+          <ForceSheet 
+            childrenData={filteredChildren} 
+            selectedOfficeId={selectedOfficeId} 
+            offices={offices} 
+          />
+        } />
         <Route path="/settings" element={<Settings childrenData={filteredChildren} />} />
 
       </Route>

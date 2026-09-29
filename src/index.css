@@ -260,7 +260,7 @@ html, body {
   }
 
   body.print-prof #prof-plan-print {
-    position: absolute !important;
+    position: static !important;
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
@@ -289,7 +289,7 @@ html, body {
   }
 
   body.print-prof-all #prof-plan-print-all {
-    position: absolute !important;
+    position: static !important;
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
@@ -353,12 +353,12 @@ html, body {
   }
 
   body.print-impl #support-impl-print {
-    position: absolute !important;
+    position: static !important;
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
     margin: 0 !important;
-    padding: 6mm !important;
+    padding: 12mm 15mm !important;
     width: 100% !important;
     max-width: 100% !important;
     gap: 0 !important;
@@ -375,6 +375,20 @@ html, body {
     box-shadow: none !important;
     background: white !important;
     backdrop-filter: none !important;
+  }
+
+  body.print-impl .print-tight-layout {
+    gap: 8px !important;
+  }
+
+  body.print-impl .print-tight-layout p,
+  body.print-impl .print-tight-layout span,
+  body.print-impl .print-tight-layout li {
+    line-height: 1.2 !important;
+  }
+
+  body.print-impl .print-tight-layout ul {
+    gap: 4px !important;
   }
 
   body.print-impl table {
@@ -454,7 +468,7 @@ html, body {
 
   body.print-impl input,
   body.print-impl textarea {
-    font-size: 8pt !important;
+    font-size: 8pt;
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
@@ -464,4 +478,55 @@ html, body {
   body.print-impl textarea.print\:hidden {
     display: none !important;
   }
+
+  /* ===================================================
+     強行シート（縦 A4）: body.print-force
+     =================================================== */
+  body.print-force * {
+    visibility: hidden;
+  }
+
+  body.print-force #force-sheet-print,
+  body.print-force #force-sheet-print * {
+    visibility: visible;
+  }
+
+  body.print-force #force-sheet-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 10mm !important;
+    box-sizing: border-box !important;
+  }
+
+  body.print-force .print\:hidden,
+  body.print-force td.print\:hidden,
+  body.print-force th.print\:hidden,
+  body.print-force button.print\:hidden {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  body.print-force table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  body.print-force th,
+  body.print-force td {
+    font-size: 8.5pt !important;
+    padding: 3px 5px !important;
+    border-color: #1e293b !important;
+  }
+
+  body.print-force input,
+  body.print-force textarea {
+    font-size: 8.5pt !important;
+    color: #000 !important;
+    border: none !important;
+    background: transparent !important;
+  }
 }
+

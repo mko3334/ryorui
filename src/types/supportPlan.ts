@@ -25,7 +25,9 @@ export interface DailyReport {
 export interface SupportPlanMeta {
   childId: string;
   month: string;         // 現在表示中の対象年月 "YYYY-MM"
+  selectedProfPlanId?: string; // 選択された反映元の専門的支援計画書ID
   goals: string;         // 支援目標
   author: string;        // 作成者
   createdAt: string;
+  excludedDates?: string[]; // 削除（除外）された日付のリスト（例: ["4月1日", "4月5日"]）
 }
